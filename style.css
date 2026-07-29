@@ -238,6 +238,12 @@ body {
 
   .hint {
     font-size: 0.72rem;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom) + 36px);
+    z-index: 10;
+    margin: 0;
   }
 }
 
@@ -311,11 +317,11 @@ body {
 
   /* Keep the hint in normal flow directly below the envelope. */
   .hint {
-    position: static;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    z-index: auto;
     margin: 0;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom) + 36px);
+    z-index: 10;
   }
 }
