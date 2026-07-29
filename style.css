@@ -277,50 +277,31 @@ body {
 }
 
 /*
-  Final mobile viewport lock (cascade winner).
-  Fits exactly in the visible browser chrome — no vertical scroll.
-  Envelope + hint stay grouped in flex; scene width unchanged.
+  Final mobile layout (cascade winner after short-height rules).
+  Scene width stays at the approved size. Centering is via flex only;
+  the hint is taken out of the tall artboard flow so it stays on-screen.
 */
-@media (max-width: 599px) {
-  html,
-  body {
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
-  }
-
-  body {
-    min-height: 100dvh;
-  }
-
-  .page {
-    position: relative;
-    height: 100dvh;
-    min-height: 100dvh;
-    overflow: hidden;
-    padding: 0;
-  }
-
-  .envelope {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    margin: 0;
-    transform: translate(-50%, -70%);
-  }
-
+@media screen and (max-width: 480px) {
   .invitation-scene {
     width: min(88vw, 520px);
   }
 
+  .page {
+    position: relative;
+    justify-content: center;
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+
   .hint {
     position: absolute;
-    left: 50%;
-    bottom: max(11dvh, calc(env(safe-area-inset-bottom) + 54px));
-    transform: translateX(-50%);
-    width: max-content;
-    max-width: 90vw;
+    left: 0;
+    right: 0;
+    bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 2.5svh));
+    z-index: 10;
     margin: 0;
-    visibility: visible;
+    text-align: center;
   }
 }
