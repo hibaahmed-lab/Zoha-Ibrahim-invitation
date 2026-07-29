@@ -1,354 +1,375 @@
 /**
  * Zoha & Ibrahim — Save the Date
- * Reversible GSAP sequence: tap to open, tap again to close.
+ * One paused, reversible GSAP timeline. Tap to open / reverse to close.
  *
- * Two-paper technique: matched-position handoff via getBoundingClientRect()
- * so .paper-front never jumps from a centered/default pose.
+ * ---------------------------------------------------------------------------
+ * DEBUG — Timeline stages (open direction)
+ * ---------------------------------------------------------------------------
+ *  0.00 – 0.35  Closed flap fades out
+ *  0.04 – 0.82  Open flap fades in + rotateX 92→0 (power2.inOut)
+ *  0.22         Paper-inside becomes visible at START_Y
+ *  0.28 – 1.23  Both papers rise START→CLEAR together (front still invisible)
+ *               Rise overlaps the still-opening flap — no pause between steps
+ *  ~1.23        Layer swap ~0.15s (label "swap"):
+ *                 paper-front autoAlpha 0→1
+ *                 paper-inside autoAlpha 1→0
+ *               Same x/y/scale — pure opacity handoff, no layout reads
+ *  after swap   Paper-front settles CLEAR→FINAL slightly downward (sine.out)
+ *
+ * Layer swap timing:
+ *   .paper-well is inset:0 on .invitation-scene, so paper-inside and
+ *   paper-front share one coordinate system. Identical transform values
+ *   keep the handoff pixel-aligned without getBoundingClientRect().
+ *
+ * Open / close state:
+ *   isOpen = intended end state. Taps ignored while isAnimating / tl.isActive().
+ *   Close = timeline.reverse() (exact reverse of open).
+ *   Resize debounces, rebuilds via gsap.context(), restores progress 0 or 1.
+ * ---------------------------------------------------------------------------
  */
 
 (() => {
   const envelope = document.getElementById("envelope");
+  const scene = document.getElementById("scene");
   const closeflap = document.getElementById("closeflap");
   const openflap = document.getElementById("openflap");
   const paperInside = document.getElementById("paper-inside");
   const paperFront = document.getElementById("paper-front");
   const hint = document.getElementById("hint");
 
+  if (!envelope || !scene || typeof gsap === "undefined") return;
+
   /**
-   * START  — tucked behind the pocket (only shown after the flap lifts)
-   * CLEAR  — fully above the pocket lip → matched handoff
-   * FINAL  — resting in front, centered on the envelope
+   * Paper Y stations (transform % of each paper’s own height —
+   * both papers are identical artboard-sized layers).
+   * START  — tucked behind the pocket
+   * CLEAR  — fully above the pocket lip (swap point)
+   * FINAL  — settled slightly downward in front of the envelope
    */
   const PAPER_START_Y = "8%";
   const PAPER_CLEAR_Y = "-23%";
   const PAPER_FINAL_Y = "4%";
   const PAPER_FINAL_SCALE = 1.02;
-  const PAPER_X = 0;
-
-  /** Soft pop-out motion */
-  const SLIDE_DURATION = 1.2;
-  const CROSSFADE = 0.1;
-  const GLIDE_DURATION = 1.4;
-  const GLIDE_OVERLAP = "-=0.25";
-
-  /** Reveal inside paper shortly after the flap begins lifting */
-  const PAPER_REVEAL_AT = 0.22;
-
-  /** Matched handoff transform (screen-synced), used for the downward glide */
-  let handoffX = 0;
-  let handoffY = 0;
-  let handoffScale = 1;
-
-  function layoutHeight(el) {
-    return el.offsetHeight || el.getBoundingClientRect().height;
-  }
-
-  function percentToYPx(percentStr, el) {
-    return (parseFloat(percentStr) / 100) * layoutHeight(el);
-  }
-
-  function numProp(el, prop) {
-    return parseFloat(gsap.getProperty(el, prop)) || 0;
-  }
 
   /**
-   * Pin .paper-front to the exact on-screen box of .paper-inside
-   * before revealing it (opacity stays 0; visibility becomes visible).
+   * Flap origin: requirement language is "50% 100%" (bottom of the flap).
+   * These PNGs are full 780×2000 artboards, so the hinge sits at ~47.3%.
    */
-  function syncFrontToInside() {
-    const insideX = numProp(paperInside, "x");
-    const insideY = numProp(paperInside, "y");
-    const insideScale = numProp(paperInside, "scale") || 1;
-
-    gsap.set(paperFront, {
-      x: insideX,
-      y: insideY,
-      scale: insideScale,
-      opacity: 0,
-      visibility: "visible",
-    });
-
-    const ir = paperInside.getBoundingClientRect();
-    let fr = paperFront.getBoundingClientRect();
-
-    // Match scale if layout boxes differ slightly across parents
-    if (fr.width > 1 && Math.abs(ir.width - fr.width) > 0.5) {
-      const matchedScale = insideScale * (ir.width / fr.width);
-      gsap.set(paperFront, { scale: matchedScale });
-      fr = paperFront.getBoundingClientRect();
-      handoffScale = matchedScale;
-    } else {
-      handoffScale = insideScale;
-    }
-
-    handoffX = numProp(paperFront, "x") + (ir.left - fr.left);
-    handoffY = numProp(paperFront, "y") + (ir.top - fr.top);
-
-    gsap.set(paperFront, {
-      x: handoffX,
-      y: handoffY,
-      scale: handoffScale,
-      opacity: 0,
-      visibility: "visible",
-    });
-  }
-
-  /**
-   * Pin .paper-inside to the exact on-screen box of .paper-front (close path).
-   */
-  function syncInsideToFront() {
-    const frontX = numProp(paperFront, "x");
-    const frontY = numProp(paperFront, "y");
-
-    gsap.set(paperInside, {
-      x: frontX,
-      y: frontY,
-      scale: 1,
-      opacity: 0,
-      visibility: "visible",
-    });
-
-    const fr = paperFront.getBoundingClientRect();
-    const ir = paperInside.getBoundingClientRect();
-
-    gsap.set(paperInside, {
-      x: numProp(paperInside, "x") + (fr.left - ir.left),
-      y: numProp(paperInside, "y") + (fr.top - ir.top),
-      scale: 1,
-      opacity: 0,
-      visibility: "visible",
-    });
-  }
-
-  /** Final Y in .paper-front space, preserving any handoff parent offset */
-  function paperFrontFinalY() {
-    const clearY = percentToYPx(PAPER_CLEAR_Y, paperFront);
-    const finalY = percentToYPx(PAPER_FINAL_Y, paperFront);
-    const offset = handoffY - clearY;
-    return finalY + offset;
-  }
-
-  // ---- Initial state (fully closed — both papers invisible) ------------
-
-  gsap.set(openflap, {
-    opacity: 0,
-    rotateX: 92,
-    transformOrigin: "50% 47.3%",
-  });
-
-  gsap.set(closeflap, {
-    opacity: 1,
-  });
-
-  gsap.set(paperInside, {
-    x: PAPER_X,
-    y: PAPER_START_Y,
-    scale: 1,
-    autoAlpha: 0,
-    pointerEvents: "none",
-    transformOrigin: "center center",
-  });
-
-  gsap.set(paperFront, {
-    x: PAPER_X,
-    y: PAPER_START_Y,
-    scale: 1,
-    autoAlpha: 0,
-    pointerEvents: "none",
-    transformOrigin: "center center",
-  });
-
-  // ---- Timeline: closed → open (reversible for toggle) -----------------
-
-  const tl = gsap.timeline({
-    paused: true,
-    defaults: { ease: "power2.inOut" },
-    onComplete() {
-      envelope.classList.add("is-open");
-      envelope.setAttribute("aria-label", "Save the date revealed — tap to close");
-      hint.classList.add("is-hidden");
-    },
-    onReverseComplete() {
-      gsap.set([paperInside, paperFront], {
-        autoAlpha: 0,
-        pointerEvents: "none",
-        y: PAPER_START_Y,
-        scale: 1,
-        x: PAPER_X,
-      });
-      envelope.classList.remove("is-open");
-      envelope.setAttribute(
-        "aria-label",
-        "Open the envelope to reveal the save the date"
-      );
-      hint.classList.remove("is-hidden");
-    },
-  });
-
-  // 1 — Closed flap dissolves
-  tl.to(
-    closeflap,
-    {
-      opacity: 0,
-      duration: 0.4,
-      ease: "power2.out",
-    },
-    0
-  );
-
-  // 2 — Open flap fades in and lifts from the hinge
-  tl.to(
-    openflap,
-    {
-      opacity: 1,
-      rotateX: 0,
-      duration: 0.8,
-      ease: "power3.out",
-    },
-    0.04
-  );
-
-  // Reveal .paper-inside once the flap has started lifting
-  tl.set(
-    paperInside,
-    {
-      x: PAPER_X,
-      y: PAPER_START_Y,
-      scale: 1,
-      autoAlpha: 1,
-    },
-    PAPER_REVEAL_AT
-  );
-
-  // 3 — Brief pause before the card emerges (after flap motion)
-  tl.to({}, { duration: 0.3 }, 0.84);
-
-  // 4 — Inside paper rises until it clears the pocket
-  tl.to(paperInside, {
-    y: PAPER_CLEAR_Y,
-    duration: SLIDE_DURATION,
-    ease: "power2.out",
-  });
-
-  // 5 — Matched-position handoff (getBoundingClientRect), then short crossfade
-  tl.add(() => {
-    if (tl.reversed()) {
-      syncInsideToFront();
-    } else {
-      syncFrontToInside();
-    }
-  });
-
-  tl.to(
-    paperFront,
-    {
-      opacity: 1,
-      duration: CROSSFADE,
-      ease: "sine.out",
-    },
-    "crossfade"
-  );
-
-  tl.to(
-    paperInside,
-    {
-      opacity: 0,
-      duration: CROSSFADE,
-      ease: "sine.out",
-    },
-    "crossfade"
-  );
-
-  tl.set(paperInside, { visibility: "hidden" });
-
-  // 6 — Continue from the matched handoff pose downward to final rest
-  //     (no x/y reset to center — keeps handoffX / descends from handoffY)
-  tl.to(
-    paperFront,
-    {
-      x: () => handoffX,
-      y: () => paperFrontFinalY(),
-      scale: PAPER_FINAL_SCALE,
-      duration: GLIDE_DURATION,
-      ease: "power2.out",
-    },
-    GLIDE_OVERLAP
-  );
-
-  // ---- Toggle ----------------------------------------------------------
-
-  let isOpen = false;
-
-  function toggleEnvelope() {
-    if (tl.isActive()) return;
-
-    if (isOpen) {
-      isOpen = false;
-      tl.reverse();
-    } else {
-      isOpen = true;
-      tl.play();
-    }
-  }
-
-  function toggleInstant() {
-    if (tl.isActive()) return;
-    isOpen = !isOpen;
-
-    if (isOpen) {
-      gsap.set(closeflap, { opacity: 0 });
-      gsap.set(openflap, { opacity: 1, rotateX: 0 });
-      gsap.set(paperInside, {
-        autoAlpha: 0,
-        y: PAPER_CLEAR_Y,
-        scale: 1,
-      });
-      handoffX = PAPER_X;
-      handoffY = percentToYPx(PAPER_CLEAR_Y, paperFront);
-      gsap.set(paperFront, {
-        autoAlpha: 1,
-        x: handoffX,
-        y: paperFrontFinalY(),
-        scale: PAPER_FINAL_SCALE,
-        visibility: "visible",
-      });
-      tl.progress(1).pause();
-      envelope.classList.add("is-open");
-      hint.classList.add("is-hidden");
-    } else {
-      gsap.set(closeflap, { opacity: 1 });
-      gsap.set(openflap, { opacity: 0, rotateX: 92 });
-      gsap.set(paperFront, {
-        autoAlpha: 0,
-        pointerEvents: "none",
-        x: PAPER_X,
-        y: PAPER_START_Y,
-        scale: 1,
-      });
-      gsap.set(paperInside, {
-        autoAlpha: 0,
-        pointerEvents: "none",
-        x: PAPER_X,
-        y: PAPER_START_Y,
-        scale: 1,
-      });
-      tl.progress(0).pause();
-      envelope.classList.remove("is-open");
-      hint.classList.remove("is-hidden");
-    }
-  }
+  const FLAP_ORIGIN = "50% 47.3%";
+  const PAPER_ORIGIN = "50% 50%";
 
   const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
-  const onActivate = prefersReducedMotion ? toggleInstant : toggleEnvelope;
 
-  envelope.addEventListener("click", onActivate);
+  let ctx = null;
+  let timeline = null;
+  let isOpen = false;
+  let isAnimating = false;
+  let resizeTimer = null;
 
-  envelope.addEventListener("keydown", (event) => {
+  function setClosedUi() {
+    envelope.classList.remove("is-open");
+    envelope.setAttribute(
+      "aria-label",
+      "Open the envelope to reveal the save the date"
+    );
+    hint.classList.remove("is-hidden");
+  }
+
+  function setOpenUi() {
+    envelope.classList.add("is-open");
+    envelope.setAttribute(
+      "aria-label",
+      "Save the date revealed — tap to close"
+    );
+    hint.classList.add("is-hidden");
+  }
+
+  function applyInstantState(open) {
+    if (open) {
+      gsap.set(closeflap, { opacity: 0 });
+      gsap.set(openflap, {
+        opacity: 1,
+        rotateX: 0,
+        transformOrigin: FLAP_ORIGIN,
+      });
+      gsap.set(paperInside, {
+        autoAlpha: 0,
+        x: 0,
+        y: PAPER_CLEAR_Y,
+        scale: 1,
+        transformOrigin: PAPER_ORIGIN,
+      });
+      gsap.set(paperFront, {
+        autoAlpha: 1,
+        x: 0,
+        y: PAPER_FINAL_Y,
+        scale: PAPER_FINAL_SCALE,
+        transformOrigin: PAPER_ORIGIN,
+      });
+      setOpenUi();
+    } else {
+      gsap.set(closeflap, { opacity: 1 });
+      gsap.set(openflap, {
+        opacity: 0,
+        rotateX: 92,
+        transformOrigin: FLAP_ORIGIN,
+      });
+      gsap.set([paperInside, paperFront], {
+        autoAlpha: 0,
+        x: 0,
+        y: PAPER_START_Y,
+        scale: 1,
+        transformOrigin: PAPER_ORIGIN,
+      });
+      setClosedUi();
+    }
+  }
+
+  function buildTimeline() {
+    if (ctx) {
+      ctx.revert();
+      ctx = null;
+      timeline = null;
+    }
+
+    ctx = gsap.context(() => {
+      // ---- Explicit initial state (closed) ------------------------------
+      gsap.set(closeflap, { opacity: 1 });
+
+      gsap.set(openflap, {
+        opacity: 0,
+        rotateX: 92,
+        transformOrigin: FLAP_ORIGIN,
+        force3D: true,
+      });
+
+      gsap.set(paperInside, {
+        x: 0,
+        y: PAPER_START_Y,
+        scale: 1,
+        autoAlpha: 0,
+        transformOrigin: PAPER_ORIGIN,
+        force3D: true,
+      });
+
+      gsap.set(paperFront, {
+        x: 0,
+        y: PAPER_START_Y,
+        scale: 1,
+        autoAlpha: 0,
+        transformOrigin: PAPER_ORIGIN,
+        force3D: true,
+      });
+
+      timeline = gsap.timeline({
+        paused: true,
+        defaults: { force3D: true },
+        onStart() {
+          isAnimating = true;
+        },
+        onComplete() {
+          isAnimating = false;
+          isOpen = true;
+          setOpenUi();
+        },
+        onReverseComplete() {
+          isAnimating = false;
+          isOpen = false;
+          gsap.set([paperInside, paperFront], {
+            autoAlpha: 0,
+            x: 0,
+            y: PAPER_START_Y,
+            scale: 1,
+            transformOrigin: PAPER_ORIGIN,
+          });
+          gsap.set(openflap, {
+            opacity: 0,
+            rotateX: 92,
+            transformOrigin: FLAP_ORIGIN,
+          });
+          gsap.set(closeflap, { opacity: 1 });
+          setClosedUi();
+        },
+      });
+
+      // 1 — Closed flap dissolves
+      timeline.to(
+        closeflap,
+        {
+          opacity: 0,
+          duration: 0.35,
+          ease: "power2.out",
+        },
+        0
+      );
+
+      // 2 — Open flap fades in and rotates up from the hinge
+      timeline.to(
+        openflap,
+        {
+          opacity: 1,
+          rotateX: 0,
+          duration: 0.78,
+          ease: "power2.inOut",
+        },
+        0.04
+      );
+
+      // 3 — Reveal inside paper; park invisible front on the same pose
+      timeline.set(
+        paperInside,
+        {
+          autoAlpha: 1,
+          x: 0,
+          y: PAPER_START_Y,
+          scale: 1,
+        },
+        0.22
+      );
+
+      timeline.set(
+        paperFront,
+        {
+          autoAlpha: 0,
+          x: 0,
+          y: PAPER_START_Y,
+          scale: 1,
+        },
+        0.22
+      );
+
+      // 4 — Both papers rise together (front stays invisible until swap)
+      //     Overlaps remaining flap motion — no empty pause tween
+      timeline.to(
+        paperInside,
+        {
+          y: PAPER_CLEAR_Y,
+          duration: 0.95,
+          ease: "power2.out",
+        },
+        0.28
+      );
+
+      timeline.to(
+        paperFront,
+        {
+          y: PAPER_CLEAR_Y,
+          duration: 0.95,
+          ease: "power2.out",
+        },
+        0.28
+      );
+
+      // 5 — Seamless layer swap (~0.15s overlap). Never hard-hide first.
+      timeline.to(
+        paperFront,
+        {
+          autoAlpha: 1,
+          duration: 0.15,
+          ease: "sine.out",
+        },
+        "swap"
+      );
+
+      timeline.to(
+        paperInside,
+        {
+          autoAlpha: 0,
+          duration: 0.15,
+          ease: "sine.out",
+        },
+        "swap"
+      );
+
+      // 6 — Front paper settles slightly downward into its final pose
+      timeline.to(
+        paperFront,
+        {
+          y: PAPER_FINAL_Y,
+          scale: PAPER_FINAL_SCALE,
+          duration: 0.85,
+          ease: "sine.out",
+        },
+        "-=0.05"
+      );
+    }, scene);
+
+    // Restore open/closed after a rebuild (e.g. resize)
+    if (timeline) {
+      timeline.progress(isOpen ? 1 : 0).pause();
+      applyInstantState(isOpen);
+      isAnimating = false;
+    }
+  }
+
+  function toggleEnvelope() {
+    if (!timeline || isAnimating || timeline.isActive()) return;
+
+    if (prefersReducedMotion) {
+      isOpen = !isOpen;
+      applyInstantState(isOpen);
+      timeline.progress(isOpen ? 1 : 0).pause();
+      return;
+    }
+
+    if (isOpen) {
+      // Already fully closed — stay consistent instead of locking forever
+      if (timeline.progress() === 0) {
+        isOpen = false;
+        applyInstantState(false);
+        return;
+      }
+      isAnimating = true;
+      timeline.reverse();
+    } else {
+      if (timeline.progress() === 1) {
+        isOpen = true;
+        applyInstantState(true);
+        return;
+      }
+      isAnimating = true;
+      timeline.play();
+    }
+  }
+
+  /**
+   * One pointer handler only — avoids touchstart + click double-firing
+   * on Mobile Safari. Keyboard remains via keydown on the <button>.
+   */
+  function onPointerUp(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.pointerType !== "mouse") {
+      event.preventDefault();
+    }
+    toggleEnvelope();
+  }
+
+  function onKeyDown(event) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      onActivate();
+      toggleEnvelope();
     }
-  });
+  }
+
+  function onResize() {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      const stayOpen = isOpen;
+      isOpen = stayOpen;
+      buildTimeline();
+      if (timeline) {
+        timeline.progress(stayOpen ? 1 : 0).pause();
+      }
+      applyInstantState(stayOpen);
+      isAnimating = false;
+    }, 150);
+  }
+
+  buildTimeline();
+
+  envelope.addEventListener("pointerup", onPointerUp);
+  envelope.addEventListener("keydown", onKeyDown);
+  window.addEventListener("resize", onResize, { passive: true });
 })();

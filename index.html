@@ -17,8 +17,12 @@
       <!--
         Shared scene (780 × 2000). Stack (back → front):
           eback → openflap → paper-inside → pocket → closeflap → paper-front
+
+        Both paper layers are absolutely positioned inside .invitation-scene
+        (paper-inside via a same-size clip well). Identical inset/size so
+        transform values stay aligned without layout measurement.
       -->
-      <div class="invitation-scene">
+      <div class="invitation-scene" id="scene">
         <img
           class="layer layer--eback"
           src="images/eback.png"
@@ -34,8 +38,8 @@
           draggable="false"
         />
 
-        <!-- Behind the pocket — slides out until it clears the opening -->
-        <div class="paper-well">
+        <!-- Same-size clip wrapper (inset:0). Does not change coordinate space. -->
+        <div class="paper-well" aria-hidden="true">
           <img
             class="layer layer--paper paper-inside"
             id="paper-inside"
@@ -60,7 +64,6 @@
           draggable="false"
         />
 
-        <!-- Above every envelope layer — takes over after the card clears -->
         <img
           class="layer layer--paper paper-front"
           id="paper-front"
