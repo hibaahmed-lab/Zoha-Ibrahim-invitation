@@ -294,24 +294,33 @@ body {
   }
 
   .page {
+    position: relative;
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
-    justify-content: center;
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-    padding-left: max(16px, env(safe-area-inset-left));
+    padding: 0;
+  }
+
+  .envelope {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: 0;
+    transform: translate(-50%, -70%);
   }
 
   .invitation-scene {
     width: min(88vw, 520px);
   }
-}
 
-@media screen and (max-width: 599px) {
-  .envelope {
-    margin-top: -18vh;
-    margin-bottom: -42vh;
+  .hint {
+    position: absolute;
+    left: 50%;
+    bottom: max(11dvh, calc(env(safe-area-inset-bottom) + 54px));
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 90vw;
+    margin: 0;
+    visibility: visible;
   }
 }
