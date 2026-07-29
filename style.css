@@ -278,8 +278,8 @@ body {
 
 /*
   Final mobile layout (cascade winner after short-height rules).
-  No transforms — asymmetric padding sits the closed envelope
-  slightly below true center with room for Safari’s bottom bar.
+  Scene width stays at the approved size. Centering is via flex only;
+  the hint is taken out of the tall artboard flow so it stays on-screen.
 */
 @media screen and (max-width: 480px) {
   .invitation-scene {
@@ -287,10 +287,21 @@ body {
   }
 
   .page {
+    position: relative;
     justify-content: center;
-    padding-top: max(16px, calc(env(safe-area-inset-top) + 14svh));
+    padding-top: max(12px, env(safe-area-inset-top));
     padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 6svh));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
+  }
+
+  .hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 2.5svh));
+    z-index: 10;
+    margin: 0;
+    text-align: center;
   }
 }
