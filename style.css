@@ -225,20 +225,15 @@ body {
   pointer-events: none;
 }
 
-/* ---- Mobile (< 600px) — ~70vw envelope --------------------------------- */
+/* ---- Mobile (< 600px) -------------------------------------------------- */
 
 @media (max-width: 599px) {
   :root {
     --hint-space: 3rem;
-    --scene-max-height: 115svh;
   }
 
   .invitation-scene {
     width: min(88vw, 520px);
-  }
-
-  .page {
-    transform: translateY(-16svh);
   }
 
   .hint {
@@ -278,5 +273,24 @@ body {
   .layer,
   .hint {
     transition: none !important;
+  }
+}
+
+/*
+  Final mobile layout (cascade winner after short-height rules).
+  No transforms — asymmetric padding sits the closed envelope
+  slightly below true center with room for Safari’s bottom bar.
+*/
+@media screen and (max-width: 480px) {
+  .invitation-scene {
+    width: min(88vw, 520px);
+  }
+
+  .page {
+    justify-content: center;
+    padding-top: max(16px, calc(env(safe-area-inset-top) + 14svh));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 6svh));
+    padding-left: max(16px, env(safe-area-inset-left));
   }
 }
