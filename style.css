@@ -16,7 +16,7 @@
 :root {
   --bg: #d8c9c8;
   --hint: #5c4540;
-  /* Shared Illustrator artboard — one parent scene sizes everything */
+  /* Shared Illustrator artboard */
   --artboard-w: 780;
   --artboard-h: 2000;
   --artboard-ratio: 780 / 2000;
@@ -25,12 +25,10 @@
   /* Room under the scene for the hint + gap */
   --hint-space: 3.25rem;
   --page-pad-y: max(20px, env(safe-area-inset-top));
-  --page-pad-x: max(20px, env(safe-area-inset-right));
-  /* Lift the whole composition ~9% of the viewport */
-  --scene-lift: 9svh;
+  --page-pad-x: max(16px, env(safe-area-inset-right));
   /*
     Max scene height so opened paper (within the artboard) and hint
-    both stay on-screen. Height cap only — width comes from breakpoints.
+    both stay on-screen.
   */
   --scene-max-height: calc(
     100svh - var(--page-pad-y) - max(20px, env(safe-area-inset-bottom)) - var(--hint-space)
@@ -67,16 +65,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Slightly above true vertical center */
   justify-content: center;
-  /*
-    Generous side margins + extra bottom pad lifts the whole
-    composition (envelope + hint) ~9svh above true center.
-  */
   padding:
-    max(16px, env(safe-area-inset-top))
-    max(20px, env(safe-area-inset-right))
-    max(28px, calc(env(safe-area-inset-bottom) + var(--scene-lift)))
-    max(20px, env(safe-area-inset-left));
+    max(12px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(28px, calc(env(safe-area-inset-bottom) + 4vh))
+    max(16px, env(safe-area-inset-left));
   box-sizing: border-box;
   overflow: hidden;
   gap: 0.85rem;
@@ -115,14 +110,10 @@ body {
 
 .invitation-scene {
   position: relative;
-  /*
-    Desktop / large tablets: 68vw, capped at 560px.
-    Height-fit cap keeps the opened card on-screen.
-    All layers are 100% of this box — no independent widths.
-  */
+  /* Prefer width caps; fall back to height so short viewports still fit */
   width: min(
-    560px,
-    68vw,
+    82vw,
+    430px,
     calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
   );
   aspect-ratio: var(--artboard-ratio);
@@ -234,18 +225,20 @@ body {
   pointer-events: none;
 }
 
-/* ---- Phones under 480px — 78vw scene ----------------------------------- */
+/* ---- Mobile (< 600px) — ~70vw envelope --------------------------------- */
 
-@media (max-width: 479px) {
+@media (max-width: 599px) {
   :root {
     --hint-space: 3rem;
+    --scene-max-height: 115svh;
   }
 
   .invitation-scene {
-    width: min(
-      78vw,
-      calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
-    );
+    width: min(88vw, 520px);
+  }
+
+  .page {
+    transform: translateY(-16svh);
   }
 
   .hint {
@@ -253,12 +246,18 @@ body {
   }
 }
 
-/* ---- Short viewports — height cap only, do not shrink width target ----- */
+/* ---- Short viewports — keep opened card + hint on screen --------------- */
 
 @media (max-height: 740px) {
   :root {
     --hint-space: 2.75rem;
-    --scene-lift: 7svh;
+  }
+
+  .invitation-scene {
+    width: min(
+      68vw,
+      calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
+    );
   }
 
   .page {
@@ -267,8 +266,11 @@ body {
 }
 
 @media (max-height: 667px) {
-  :root {
-    --scene-lift: 5svh;
+  .invitation-scene {
+    width: min(
+      62vw,
+      calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
+    );
   }
 }
 
