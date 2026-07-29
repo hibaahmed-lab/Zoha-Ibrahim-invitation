@@ -277,31 +277,34 @@ body {
 }
 
 /*
-  Final mobile layout (cascade winner after short-height rules).
-  Scene width stays at the approved size. Centering is via flex only;
-  the hint is taken out of the tall artboard flow so it stays on-screen.
+  Final mobile viewport lock (cascade winner).
+  Fits exactly in the visible browser chrome — no vertical scroll.
+  Envelope + hint stay grouped in flex; scene width unchanged.
 */
-@media screen and (max-width: 480px) {
-  .invitation-scene {
-    width: min(88vw, 520px);
+@media (max-width: 599px) {
+  html,
+  body {
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
   }
 
   .page {
-    position: relative;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
     justify-content: center;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
   }
 
-  .hint {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 2.5svh));
-    z-index: 10;
-    margin: 0;
-    text-align: center;
+  .invitation-scene {
+    width: min(88vw, 520px);
   }
 }
