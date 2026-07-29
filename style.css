@@ -297,11 +297,7 @@ body {
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    gap: 0;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-right: max(16px, env(safe-area-inset-right));
     padding-bottom: max(20px, env(safe-area-inset-bottom));
@@ -311,24 +307,11 @@ body {
   .invitation-scene {
     width: min(88vw, 520px);
   }
+}
 
-  /*
-    Pull hint into the viewport: the artboard is taller than 100dvh,
-    so without this the centered flex group clips the hint below the fold.
-    Scene width/size and envelope transform are untouched.
-  */
+@media screen and (max-width: 599px) {
   .envelope {
-    margin-bottom: -7svh;
-  }
-
-  .hint {
-    display: block;
-    visibility: visible;
-    opacity: 0.7;
-    position: static;
-    margin-top: 0.85rem;
-    flex-shrink: 0;
-    text-align: center;
-    width: 100%;
+    margin-top: -18vh;
+    margin-bottom: -42vh;
   }
 }
