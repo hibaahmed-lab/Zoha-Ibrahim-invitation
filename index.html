@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoha & Ibrahim — Save the Date</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="page" aria-label="Save the date envelope">
+    <button
+      type="button"
+      class="envelope"
+      id="envelope"
+      aria-label="Open the envelope to reveal the save the date"
+    >
+      <!--
+        Shared scene (780 × 2000). Stack (back → front):
+          eback → openflap → paper-inside → pocket → closeflap → paper-front
+      -->
+      <div class="invitation-scene">
+        <img
+          class="layer layer--eback"
+          src="images/eback.png"
+          alt=""
+          draggable="false"
+        />
+
+        <img
+          class="layer layer--openflap"
+          id="openflap"
+          src="images/openflap.png"
+          alt=""
+          draggable="false"
+        />
+
+        <!-- Behind the pocket — slides out until it clears the opening -->
+        <div class="paper-well">
+          <img
+            class="layer layer--paper paper-inside"
+            id="paper-inside"
+            src="images/paper.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
+
+        <img
+          class="layer layer--pocket"
+          src="images/pocket.png"
+          alt=""
+          draggable="false"
+        />
+
+        <img
+          class="layer layer--closeflap"
+          id="closeflap"
+          src="images/closeflap.png"
+          alt=""
+          draggable="false"
+        />
+
+        <!-- Above every envelope layer — takes over after the card clears -->
+        <img
+          class="layer layer--paper paper-front"
+          id="paper-front"
+          src="images/paper.png"
+          alt="Save the Date — Zoha & Ibrahim"
+          draggable="false"
+        />
+      </div>
+    </button>
+
+    <p class="hint" id="hint">Tap the envelope to open</p>
+  </main>
+
+  <!-- GSAP core -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
