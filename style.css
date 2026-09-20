@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
    Zoha & Ibrahim — Save the Date
-   One shared .invitation-scene scales the full 780 × 2000 artboard.
+   One shared .invitation-scene scales the full 1625 × 4167 artboard.
    Layers stay locked in relative alignment across all screen sizes.
    GSAP owns transform / opacity / visibility — no CSS transitions on layers.
    -------------------------------------------------------------------------- */
@@ -17,9 +17,9 @@
   --bg: #d8c9c8;
   --hint: #5c4540;
   /* Shared Illustrator artboard */
-  --artboard-w: 780;
-  --artboard-h: 2000;
-  --artboard-ratio: 780 / 2000;
+  --artboard-w: 1625;
+  --artboard-h: 4167;
+  --artboard-ratio: 1625 / 4167;
   /* Empty artboard below the leather pocket — clip only this strip */
   --below-pocket: 28%;
   /* Room under the scene for the hint + gap */
@@ -33,7 +33,8 @@
   --scene-max-height: calc(
     100svh - var(--page-pad-y) - max(20px, env(safe-area-inset-bottom)) - var(--hint-space)
   );
-  /* GSAP final paper pose — read in script.js on timeline build */
+  /* GSAP paper pose — read in script.js on timeline build */
+  --paper-base-scale: 1;
   --paper-final-scale: 0.72;
   --paper-final-y: 4%;
 }
@@ -65,10 +66,10 @@ body {
 
 .page {
   min-height: 100svh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Slightly above true vertical center */
   justify-content: center;
   padding:
     max(12px, env(safe-area-inset-top))
@@ -120,9 +121,9 @@ body {
   width: min(
     42vw,
     540px,
-    calc(var(--scene-max-height) * 780 / 2000)
+    calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
   );
-  aspect-ratio: 780 / 2000;
+  aspect-ratio: var(--artboard-ratio);
   flex-shrink: 0;
   opacity: 1;
   visibility: visible;
@@ -147,6 +148,32 @@ body {
   transform-style: preserve-3d;
   /* No CSS transitions on GSAP-driven properties */
   transition: none;
+}
+
+/* Envelope PNG layers — scaled on mobile without affecting paper2.png */
+.envelope-artwork {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.envelope-artwork--eback {
+  z-index: 1;
+}
+
+.envelope-artwork--openflap {
+  z-index: 2;
+}
+
+.envelope-artwork--pocket {
+  z-index: 4;
+}
+
+.envelope-artwork--closeflap {
+  z-index: 5;
 }
 
 /*
@@ -191,8 +218,11 @@ body {
   clip-path: inset(0 0 var(--below-pocket) 0);
 }
 
-.paper-inside {
+.invitation-scene .paper-inside {
   z-index: 3;
+  inset: auto;
+  left: 50%;
+  top: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -212,8 +242,11 @@ body {
 }
 
 /* Identical artboard layer — sits above the whole envelope once swapped */
-.paper-front-stack {
+.invitation-scene .paper-front-stack {
   z-index: 6;
+  inset: auto;
+  left: 50%;
+  top: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -228,6 +261,20 @@ body {
   object-fit: contain;
   pointer-events: none;
   display: block;
+}
+
+.envelope.is-open #event-hotspots::after {
+  content: "×";
+  position: absolute;
+  top: 28%;
+  right: 10px;
+  z-index: 9999;
+  color: #6f2633;
+  font-size: 24px;
+  line-height: 1;
+  pointer-events: none;
+  visibility: visible;
+  opacity: 1;
 }
 
 /* ---- Event hotspots (menu card) ---------------------------------------- */
@@ -266,7 +313,6 @@ body {
   left: 22%;
   width: 56%;
   height: 11%;
-  background: rgba(255, 0, 0, 0.18);
 }
 
 #hotspot-walima {
@@ -277,7 +323,6 @@ body {
   left: 22%;
   width: 56%;
   height: 11%;
-  background: rgba(0, 255, 0, 0.18);
 }
 
 #hotspot-sangeet {
@@ -288,7 +333,12 @@ body {
   left: 22%;
   width: 56%;
   height: 11%;
-  background: rgba(0, 0, 255, 0.18);
+}
+
+#hotspot-shendi,
+#hotspot-walima,
+#hotspot-sangeet {
+  background: transparent;
 }
 
 /* ---- Full-screen invitation overlay ------------------------------------ */
@@ -300,32 +350,36 @@ body.has-overlay {
 .invitation-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  overflow-x: hidden;
+  z-index: 999;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 12px 36px;
+  box-sizing: border-box;
+}
+
+.invitation-overlay:not([hidden]) {
+  display: flex;
 }
 
 .invitation-overlay__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(216, 201, 200, 0.92);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(20, 12, 14, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .invitation-overlay__content {
   position: relative;
   z-index: 1;
-  min-height: 100%;
+  width: 100%;
+  min-height: calc(100svh - 56px);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding:
-    max(32px, calc(env(safe-area-inset-top) + 48px))
-    16px
-    max(32px, env(safe-area-inset-bottom))
-    16px;
+  align-items: center;
   box-sizing: border-box;
 }
 
@@ -333,20 +387,27 @@ body.has-overlay {
   position: fixed;
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
-  z-index: 2;
-  width: 44px;
-  height: 44px;
-  border: none;
+  z-index: 1001;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(92, 69, 64, 0.15);
-  color: #5c4540;
-  font-size: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.88);
+  color: #6f2633;
+  font-size: 26px;
   line-height: 1;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.invitation-overlay__close:active {
+  transform: scale(0.94);
 }
 
 .invitation-overlay__close:focus-visible {
@@ -356,12 +417,38 @@ body.has-overlay {
 
 .invitation-overlay__image {
   display: block;
-  width: auto;
+  width: 100%;
+  max-width: 500px;
   height: auto;
-  max-width: min(88vw, 500px);
-  max-height: none;
   margin: 0 auto;
   object-fit: contain;
+}
+
+@media (min-width: 701px) {
+  .invitation-overlay__image {
+    width: min(44vw, 560px);
+    max-width: 560px;
+  }
+}
+
+/* ---- Names under envelope ---------------------------------------------- */
+
+.envelope-signature {
+  position: absolute;
+  left: 50%;
+  top: 79%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  margin: 0;
+  white-space: nowranp;
+  pointer-events: noe;
+  font-family: "Allura", "Great Vibes", cursive;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  color: #6b4a37;
+  opacity: 1;
+  visibility: visible;
 }
 
 /* ---- Hint text --------------------------------------------------------- */
@@ -388,33 +475,95 @@ body.has-overlay {
 @media (max-width: 700px) {
   :root {
     --hint-space: 2.25rem;
-    /* ~80vw card on an ~88vw envelope (80 / 88 ≈ 0.91) */
-    --paper-final-scale: 0.91;
+    /*
+      Prior final card visual: 93vw scene × 0.91 GSAP scale = 84.63vw.
+      Envelope matches that computed width; scale 1 keeps the same rendered card size.
+    */
+    --mobile-final-card-width: calc(93vw * 0.91);
+    --mobile-final-card-max: calc(440px * 0.91);
+    --paper-base-scale: 0.84;
+    --paper-final-scale: 0.84;
     --paper-final-y: -3%;
+    /* Horizontal fine-tune for envelope artwork only (negative = move left) */
+    --envelope-nudge-x: -8px;
   }
 
   .page {
     justify-content: center;
     gap: 0.65rem;
     padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* DEBUG — remove after verifying centering */
+  .invitation-scene {
+    outline: 2px solid red;
+  }
+
+  .envelope {
+    outline: 2px solid blue;
+  }
+
+  .envelope-artwork {
+    outline: 2px solid lime;
   }
 
   .invitation-scene {
-    width: min(
-      88vw,
-      430px,
-      calc(var(--scene-max-height) * 780 / 2000)
-    );
+    position: relative;
+    width: 100vw;
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
-  .invitation-overlay__image {
-    max-width: 88vw;
+  .envelope {
+    position: relative;
+    top: -48px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: visible;
+  }
+
+  .envelope-artwork {
+    inset: auto;
+    left: 50%;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin-left: var(--envelope-nudge-x);
+    transform: translateX(-50%) scale(1.29);
+    transform-origin: center center;
+  }
+
+  .page::after {
+    content: "";
+    flex-shrink: 0;
+    height: 1.3em;
+    width: 0;
+    pointer-events: none;
+    visibility: hidden;
   }
 
   .hint {
-    position: static;
-    font-size: 0.82rem;
+    position: absolute;
+    left: 50%;
+    top: 86%;
+    transform: translateX(-50%);
+    z-index: 9999;
     margin: 0;
+    min-height: 0;
+    white-space: nowrap;
+    pointer-events: none;
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    color: #6b4a37;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 }
 
@@ -459,9 +608,9 @@ body.has-overlay {
     overflow: hidden;
     justify-content: center;
     padding-top: max(12px, env(safe-area-inset-top));
-    padding-right: max(16px, env(safe-area-inset-right));
+    padding-right: 0;
     padding-bottom: max(20px, env(safe-area-inset-bottom));
-    padding-left: max(16px, env(safe-area-inset-left));
+    padding-left: 0;
     box-sizing: border-box;
   }
 }
@@ -469,7 +618,8 @@ body.has-overlay {
 /* Short phones — keep opened card within ~74svh without changing animation */
 @media (max-width: 700px) and (max-height: 740px) {
   :root {
-    --paper-final-scale: 0.87;
+    --paper-base-scale: 0.8;
+    --paper-final-scale: 0.8;
     --paper-final-y: -5%;
   }
 }

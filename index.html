@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zoha & Ibrahim — Save the Date</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Allura&display=swap"
+    rel="stylesheet"
+  />
 
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://zoha-ibrahim.com/">
@@ -38,20 +44,24 @@
         transform values stay aligned without layout measurement.
       -->
       <div class="invitation-scene" id="scene">
-        <img
-          class="layer layer--eback"
-          src="images/eback.png"
-          alt=""
-          draggable="false"
-        />
+        <div class="envelope-artwork envelope-artwork--eback">
+          <img
+            class="layer layer--eback"
+            src="images/eback.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
 
-        <img
-          class="layer layer--openflap"
-          id="openflap"
-          src="images/openflap.png"
-          alt=""
-          draggable="false"
-        />
+        <div class="envelope-artwork envelope-artwork--openflap">
+          <img
+            class="layer layer--openflap"
+            id="openflap"
+            src="images/openflap.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
 
         <!-- Same-size clip wrapper (inset:0). Does not change coordinate space. -->
         <div class="paper-well" aria-hidden="true">
@@ -64,20 +74,24 @@
           />
         </div>
 
-        <img
-          class="layer layer--pocket"
-          src="images/pocket.png"
-          alt=""
-          draggable="false"
-        />
+        <div class="envelope-artwork envelope-artwork--pocket">
+          <img
+            class="layer layer--pocket"
+            src="images/pocket.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
 
-        <img
-          class="layer layer--closeflap"
-          id="closeflap"
-          src="images/closeflap.png"
-          alt=""
-          draggable="false"
-        />
+        <div class="envelope-artwork envelope-artwork--closeflap">
+          <img
+            class="layer layer--closeflap"
+            id="closeflap"
+            src="images/closeflap.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
 
         <div class="layer paper-front-stack" id="paper-front-stack">
           <img
@@ -108,9 +122,9 @@
           </div>
         </div>
       </div>
+      <div class="envelope-signature">Zoha &amp; Ibrahim</div>
+      <p class="hint" id="hint">Tap the envelope to open</p>
     </button>
-
-    <p class="hint" id="hint">Tap the envelope to open</p>
   </main>
 
   <div

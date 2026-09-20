@@ -77,6 +77,14 @@
   const PAPER_START_Y = "8%";
   const PAPER_CLEAR_Y = "-23%";
 
+  function getPaperBaseScale() {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--paper-base-scale")
+      .trim();
+    const scale = parseFloat(raw);
+    return Number.isFinite(scale) ? scale : 1;
+  }
+
   function getPaperFinalScale() {
     const raw = getComputedStyle(document.documentElement)
       .getPropertyValue("--paper-final-scale")
@@ -98,6 +106,7 @@
    */
   const FLAP_ORIGIN = "50% 47.3%";
   const PAPER_ORIGIN = "50% 50%";
+  const PAPER_CENTER = { left: "50%", xPercent: -50 };
 
   const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
@@ -147,14 +156,14 @@
       });
       gsap.set(paperInside, {
         autoAlpha: 0,
-        x: 0,
+        ...PAPER_CENTER,
         y: PAPER_CLEAR_Y,
-        scale: 1,
+        scale: getPaperBaseScale(),
         transformOrigin: PAPER_ORIGIN,
       });
       gsap.set(paperFront, {
         autoAlpha: 1,
-        x: 0,
+        ...PAPER_CENTER,
         y: getPaperFinalY(),
         scale: getPaperFinalScale(),
         transformOrigin: PAPER_ORIGIN,
@@ -169,9 +178,9 @@
       });
       gsap.set([paperInside, paperFront], {
         autoAlpha: 0,
-        x: 0,
+        ...PAPER_CENTER,
         y: PAPER_START_Y,
-        scale: 1,
+        scale: getPaperBaseScale(),
         transformOrigin: PAPER_ORIGIN,
       });
       setClosedUi();
@@ -197,18 +206,18 @@
       });
 
       gsap.set(paperInside, {
-        x: 0,
+        ...PAPER_CENTER,
         y: PAPER_START_Y,
-        scale: 1,
+        scale: getPaperBaseScale(),
         autoAlpha: 0,
         transformOrigin: PAPER_ORIGIN,
         force3D: true,
       });
 
       gsap.set(paperFront, {
-        x: 0,
+        ...PAPER_CENTER,
         y: PAPER_START_Y,
-        scale: 1,
+        scale: getPaperBaseScale(),
         autoAlpha: 0,
         transformOrigin: PAPER_ORIGIN,
         force3D: true,
@@ -230,9 +239,9 @@
           isOpen = false;
           gsap.set([paperInside, paperFront], {
             autoAlpha: 0,
-            x: 0,
+            ...PAPER_CENTER,
             y: PAPER_START_Y,
-            scale: 1,
+            scale: getPaperBaseScale(),
             transformOrigin: PAPER_ORIGIN,
           });
           gsap.set(openflap, {
@@ -273,9 +282,9 @@
         paperInside,
         {
           autoAlpha: 1,
-          x: 0,
+          ...PAPER_CENTER,
           y: PAPER_START_Y,
-          scale: 1,
+          scale: getPaperBaseScale(),
         },
         0.22
       );
@@ -284,9 +293,9 @@
         paperFront,
         {
           autoAlpha: 0,
-          x: 0,
+          ...PAPER_CENTER,
           y: PAPER_START_Y,
-          scale: 1,
+          scale: getPaperBaseScale(),
         },
         0.22
       );
@@ -335,16 +344,15 @@
       );
 
       // 6 — Front paper settles slightly downward into its final pose
-      timeline.to(
-        paperFront,
-        {
-          y: getPaperFinalY(),
-          scale: getPaperFinalScale(),
-          duration: 0.85,
-          ease: "sine.out",
-        },
-        "-=0.05"
-      );
+      const paperSettle = {
+        y: getPaperFinalY(),
+        duration: 0.85,
+        ease: "sine.out",
+      };
+      if (getPaperBaseScale() !== getPaperFinalScale()) {
+        paperSettle.scale = getPaperFinalScale();
+      }
+      timeline.to(paperFront, paperSettle, "-=0.05");
     }, scene);
 
     // Restore open/closed after a rebuild (e.g. resize)
