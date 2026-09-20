@@ -33,6 +33,9 @@
   --scene-max-height: calc(
     100svh - var(--page-pad-y) - max(20px, env(safe-area-inset-bottom)) - var(--hint-space)
   );
+  /* GSAP final paper pose — read in script.js on timeline build */
+  --paper-final-scale: 0.72;
+  --paper-final-y: 4%;
 }
 
 html,
@@ -75,6 +78,8 @@ body {
   box-sizing: border-box;
   overflow: hidden;
   gap: 0.85rem;
+  opacity: 1;
+  visibility: visible;
 }
 
 /* ---- Hit target (does not size the artwork) ---------------------------- */
@@ -88,6 +93,8 @@ body {
   cursor: pointer;
   display: block;
   flex-shrink: 0;
+  opacity: 1;
+  visibility: visible;
   /* Perspective for the flap’s 3D lift — sized by .invitation-scene */
   perspective: 1200px;
   transform-style: preserve-3d;
@@ -110,14 +117,15 @@ body {
 
 .invitation-scene {
   position: relative;
-  /* Prefer width caps; fall back to height so short viewports still fit */
   width: min(
-    82vw,
-    430px,
-    calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
+    42vw,
+    540px,
+    calc(var(--scene-max-height) * 780 / 2000)
   );
-  aspect-ratio: var(--artboard-ratio);
+  aspect-ratio: 780 / 2000;
   flex-shrink: 0;
+  opacity: 1;
+  visibility: visible;
   transform-style: preserve-3d;
   touch-action: manipulation;
 }
@@ -148,6 +156,8 @@ body {
 */
 .layer--eback {
   z-index: 1;
+  opacity: 1;
+  visibility: visible;
 }
 
 /*
@@ -191,19 +201,167 @@ body {
 
 .layer--pocket {
   z-index: 4;
+  opacity: 1;
+  visibility: visible;
 }
 
 .layer--closeflap {
   z-index: 5;
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Identical artboard layer — sits above the whole envelope once swapped */
-.paper-front {
+.paper-front-stack {
   z-index: 6;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transform-origin: 50% 50%;
+}
+
+.paper-front-stack .paper-front-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+
+/* ---- Event hotspots (menu card) ---------------------------------------- */
+
+.event-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.envelope.is-open .event-hotspots {
+  pointer-events: auto;
+}
+
+.event-hotspot {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+  Hotspot positions (% of card artboard) — ID-based, non-overlapping.
+  Shendi (upper-middle) → Walima (center) → Sangeet (below Walima)
+*/
+#hotspot-shendi {
+  position: absolute;
+  z-index: 20;
+  cursor: pointer;
+  top: 30%;
+  left: 22%;
+  width: 56%;
+  height: 11%;
+  background: rgba(255, 0, 0, 0.18);
+}
+
+#hotspot-walima {
+  position: absolute;
+  z-index: 20;
+  cursor: pointer;
+  top: 43%;
+  left: 22%;
+  width: 56%;
+  height: 11%;
+  background: rgba(0, 255, 0, 0.18);
+}
+
+#hotspot-sangeet {
+  position: absolute;
+  z-index: 20;
+  cursor: pointer;
+  top: 55%;
+  left: 22%;
+  width: 56%;
+  height: 11%;
+  background: rgba(0, 0, 255, 0.18);
+}
+
+/* ---- Full-screen invitation overlay ------------------------------------ */
+
+body.has-overlay {
+  overflow: hidden;
+}
+
+.invitation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.invitation-overlay__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(216, 201, 200, 0.92);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.invitation-overlay__content {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding:
+    max(32px, calc(env(safe-area-inset-top) + 48px))
+    16px
+    max(32px, env(safe-area-inset-bottom))
+    16px;
+  box-sizing: border-box;
+}
+
+.invitation-overlay__close {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(92, 69, 64, 0.15);
+  color: #5c4540;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.invitation-overlay__close:focus-visible {
+  outline: 2px solid #5c4540;
+  outline-offset: 2px;
+}
+
+.invitation-overlay__image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(88vw, 500px);
+  max-height: none;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 /* ---- Hint text --------------------------------------------------------- */
@@ -225,24 +383,37 @@ body {
   pointer-events: none;
 }
 
-/* ---- Mobile (< 600px) -------------------------------------------------- */
+/* ---- Mobile (≤ 700px) -------------------------------------------------- */
 
-@media (max-width: 599px) {
+@media (max-width: 700px) {
   :root {
-    --hint-space: 3rem;
+    --hint-space: 2.25rem;
+    /* ~80vw card on an ~88vw envelope (80 / 88 ≈ 0.91) */
+    --paper-final-scale: 0.91;
+    --paper-final-y: -3%;
+  }
+
+  .page {
+    justify-content: center;
+    gap: 0.65rem;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 
   .invitation-scene {
-    width: min(88vw, 520px);
+    width: min(
+      88vw,
+      430px,
+      calc(var(--scene-max-height) * 780 / 2000)
+    );
+  }
+
+  .invitation-overlay__image {
+    max-width: 88vw;
   }
 
   .hint {
+    position: static;
     font-size: 0.82rem;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + 60px);
-    z-index: 10;
     margin: 0;
   }
 }
@@ -254,24 +425,8 @@ body {
     --hint-space: 2.75rem;
   }
 
-  .invitation-scene {
-    width: min(
-      68vw,
-      calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
-    );
-  }
-
   .page {
     gap: 0.65rem;
-  }
-}
-
-@media (max-height: 667px) {
-  .invitation-scene {
-    width: min(
-      62vw,
-      calc(var(--scene-max-height) * var(--artboard-w) / var(--artboard-h))
-    );
   }
 }
 
@@ -309,23 +464,12 @@ body {
     padding-left: max(16px, env(safe-area-inset-left));
     box-sizing: border-box;
   }
+}
 
-  /* Keep approved mobile scene size unchanged. */
-  .invitation-scene {
-    width: min(92vw, 540px);
-  }
-
-  /* Keep the hint in normal flow directly below the envelope. */
-  .envelope {
-    margin-top: -24px;
-  }
-
-  .hint {
-    margin: 0;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + 60px);
-    z-index: 10;
+/* Short phones — keep opened card within ~74svh without changing animation */
+@media (max-width: 700px) and (max-height: 740px) {
+  :root {
+    --paper-final-scale: 0.87;
+    --paper-final-y: -5%;
   }
 }

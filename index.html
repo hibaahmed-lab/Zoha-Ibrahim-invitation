@@ -79,18 +79,65 @@
           draggable="false"
         />
 
-        <img
-          class="layer layer--paper paper-front"
-          id="paper-front"
-          src="images/paper2.png"
-          alt="Save the Date — Zoha & Ibrahim"
-          draggable="false"
-        />
+        <div class="layer paper-front-stack" id="paper-front-stack">
+          <img
+            class="paper-front-img"
+            id="paper-front"
+            src="images/paper2.png"
+            alt="Save the Date — Zoha & Ibrahim"
+            draggable="false"
+          />
+
+          <!-- Percentage-positioned hotspots — adjust in CSS only -->
+          <div class="event-hotspots" id="event-hotspots" aria-hidden="true">
+            <div
+              id="hotspot-shendi"
+              class="event-hotspot event-hotspot--shendi"
+              aria-label="Open Shendi invitation"
+            ></div>
+            <div
+              id="hotspot-walima"
+              class="event-hotspot event-hotspot--walima"
+              aria-label="Open Walima invitation"
+            ></div>
+            <div
+              id="hotspot-sangeet"
+              class="event-hotspot event-hotspot--sangeet"
+              aria-label="Open Sangeet invitation"
+            ></div>
+          </div>
+        </div>
       </div>
     </button>
 
     <p class="hint" id="hint">Tap the envelope to open</p>
   </main>
+
+  <div
+    class="invitation-overlay"
+    id="invitation-overlay"
+    hidden
+    aria-hidden="true"
+  >
+    <div class="invitation-overlay__backdrop" aria-hidden="true"></div>
+    <div class="invitation-overlay__content">
+      <button
+        type="button"
+        class="invitation-overlay__close"
+        id="invitation-overlay-close"
+        aria-label="Close invitation"
+      >
+        &times;
+      </button>
+      <img
+        class="invitation-overlay__image"
+        id="invitation-overlay-image"
+        src=""
+        alt=""
+        draggable="false"
+      />
+    </div>
+  </div>
 
   <!-- GSAP core -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>

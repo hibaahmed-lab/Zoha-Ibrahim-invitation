@@ -34,10 +34,38 @@
   const closeflap = document.getElementById("closeflap");
   const openflap = document.getElementById("openflap");
   const paperInside = document.getElementById("paper-inside");
-  const paperFront = document.getElementById("paper-front");
+  const paperFront = document.getElementById("paper-front-stack");
   const hint = document.getElementById("hint");
+  const eventHotspots = document.getElementById("event-hotspots");
+  const invitationOverlay = document.getElementById("invitation-overlay");
+  const invitationOverlayImage = document.getElementById(
+    "invitation-overlay-image"
+  );
+  const invitationOverlayClose = document.getElementById(
+    "invitation-overlay-close"
+  );
 
-  if (!envelope || !scene || typeof gsap === "undefined") return;
+  if (!envelope || !scene) return;
+
+  /** Set false to verify static envelope layers without GSAP. */
+  const ANIMATION_ENABLED = true;
+
+  function ensureClosedBaseline() {
+    if (closeflap) closeflap.style.opacity = "1";
+    if (openflap) {
+      openflap.style.opacity = "0";
+    }
+    [paperInside, paperFront].forEach((el) => {
+      if (!el) return;
+      el.style.opacity = "0";
+      el.style.visibility = "hidden";
+    });
+  }
+
+  if (typeof gsap === "undefined") {
+    ensureClosedBaseline();
+    return;
+  }
 
   /**
    * Paper Y stations (transform % of each paper’s own height —
@@ -48,8 +76,21 @@
    */
   const PAPER_START_Y = "8%";
   const PAPER_CLEAR_Y = "-23%";
-  const PAPER_FINAL_Y = "4%";
-  const PAPER_FINAL_SCALE = 1.02;
+
+  function getPaperFinalScale() {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--paper-final-scale")
+      .trim();
+    const scale = parseFloat(raw);
+    return Number.isFinite(scale) ? scale : 0.72;
+  }
+
+  function getPaperFinalY() {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--paper-final-y")
+      .trim();
+    return raw || "4%";
+  }
 
   /**
    * Flap origin: requirement language is "50% 100%" (bottom of the flap).
@@ -68,6 +109,11 @@
   let isAnimating = false;
   let resizeTimer = null;
 
+  function setHotspotsAvailable(available) {
+    if (!eventHotspots) return;
+    eventHotspots.setAttribute("aria-hidden", available ? "false" : "true");
+  }
+
   function setClosedUi() {
     envelope.classList.remove("is-open");
     envelope.setAttribute(
@@ -75,6 +121,8 @@
       "Open the envelope to reveal the save the date"
     );
     hint.classList.remove("is-hidden");
+    setHotspotsAvailable(false);
+    closeInvitationOverlay();
   }
 
   function setOpenUi() {
@@ -84,6 +132,9 @@
       "Save the date revealed — tap to close"
     );
     hint.classList.add("is-hidden");
+    if (!isOverlayOpen()) {
+      setHotspotsAvailable(true);
+    }
   }
 
   function applyInstantState(open) {
@@ -104,8 +155,8 @@
       gsap.set(paperFront, {
         autoAlpha: 1,
         x: 0,
-        y: PAPER_FINAL_Y,
-        scale: PAPER_FINAL_SCALE,
+        y: getPaperFinalY(),
+        scale: getPaperFinalScale(),
         transformOrigin: PAPER_ORIGIN,
       });
       setOpenUi();
@@ -287,8 +338,8 @@
       timeline.to(
         paperFront,
         {
-          y: PAPER_FINAL_Y,
-          scale: PAPER_FINAL_SCALE,
+          y: getPaperFinalY(),
+          scale: getPaperFinalScale(),
           duration: 0.85,
           ease: "sine.out",
         },
@@ -304,7 +355,48 @@
     }
   }
 
+  function isOverlayOpen() {
+    return (
+      invitationOverlay &&
+      !invitationOverlay.hidden &&
+      invitationOverlay.getAttribute("aria-hidden") !== "true"
+    );
+  }
+
+  function openEventInvite(imagePath) {
+    if (!invitationOverlay || !invitationOverlayImage || !imagePath) return;
+    if (!isOpen || isAnimating || isOverlayOpen()) return;
+
+    invitationOverlayImage.removeAttribute("src");
+    invitationOverlayImage.src = imagePath.split("&").join("%26");
+    invitationOverlay.hidden = false;
+    invitationOverlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("has-overlay");
+
+    if (eventHotspots) {
+      eventHotspots.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function closeInvitationOverlay() {
+    if (!invitationOverlay) return;
+
+    invitationOverlay.hidden = true;
+    invitationOverlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("has-overlay");
+
+    if (invitationOverlayImage) {
+      invitationOverlayImage.removeAttribute("src");
+      invitationOverlayImage.alt = "";
+    }
+
+    if (eventHotspots && isOpen) {
+      eventHotspots.setAttribute("aria-hidden", "false");
+    }
+  }
+
   function toggleEnvelope() {
+    if (isOverlayOpen()) return;
     if (!timeline || isAnimating || timeline.isActive()) return;
 
     if (prefersReducedMotion) {
@@ -339,6 +431,9 @@
    * on Mobile Safari. Keyboard remains via keydown on the <button>.
    */
   function onPointerUp(event) {
+    if (event.target.closest("#hotspot-shendi, #hotspot-walima, #hotspot-sangeet")) {
+      return;
+    }
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (event.pointerType !== "mouse") {
       event.preventDefault();
@@ -347,6 +442,14 @@
   }
 
   function onKeyDown(event) {
+    if (event.key === "Escape" && isOverlayOpen()) {
+      event.preventDefault();
+      closeInvitationOverlay();
+      return;
+    }
+
+    if (isOverlayOpen()) return;
+
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       toggleEnvelope();
@@ -367,9 +470,60 @@
     }, 150);
   }
 
-  buildTimeline();
+  if (ANIMATION_ENABLED) {
+    buildTimeline();
+  } else {
+    ensureClosedBaseline();
+  }
 
   envelope.addEventListener("pointerup", onPointerUp);
   envelope.addEventListener("keydown", onKeyDown);
   window.addEventListener("resize", onResize, { passive: true });
+
+  const shendiHotspot = document.getElementById("hotspot-shendi");
+  const walimaHotspot = document.getElementById("hotspot-walima");
+  const sangeetHotspot = document.getElementById("hotspot-sangeet");
+
+  if (shendiHotspot) {
+    shendiHotspot.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openEventInvite("images/Zoha&Ibrahim-Shendi.png");
+    });
+  }
+
+  if (walimaHotspot) {
+    walimaHotspot.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openEventInvite("images/Zoha&Ibrahim-Walima.png");
+    });
+  }
+
+  if (sangeetHotspot) {
+    sangeetHotspot.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openEventInvite("images/Zoha&Ibrahim-Sangeet.png");
+    });
+  }
+
+  if (invitationOverlayClose) {
+    invitationOverlayClose.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeInvitationOverlay();
+    });
+  }
+
+  const invitationOverlayBackdrop = invitationOverlay?.querySelector(
+    ".invitation-overlay__backdrop"
+  );
+
+  if (invitationOverlayBackdrop) {
+    invitationOverlayBackdrop.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      closeInvitationOverlay();
+    });
+  }
 })();
