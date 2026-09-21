@@ -483,7 +483,7 @@ body.has-overlay {
     --mobile-final-card-max: calc(440px * 0.91);
     --paper-base-scale: 0.84;
     --paper-final-scale: 0.84;
-    --paper-final-y: -1%;
+    --paper-final-y: 3%;
     /* Horizontal fine-tune for envelope artwork only (negative = move left) */
     --envelope-nudge-x: -8px;
   }
@@ -620,6 +620,6 @@ body.has-overlay {
   :root {
     --paper-base-scale: 0.8;
     --paper-final-scale: 0.8;
-    --paper-final-y: -5%;
+    --paper-final-y: -1%;
   }
 }
