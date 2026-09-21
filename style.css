@@ -601,6 +601,9 @@ body.has-overlay {
     text-transform: uppercase;
   }
 
+  .paper-instruction {
+    top: calc(100% + 20px);
+  }
 }
 
 /* ---- Short viewports — keep opened card + hint on screen --------------- */
