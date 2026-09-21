@@ -35,8 +35,6 @@
   const openflap = document.getElementById("openflap");
   const paperInside = document.getElementById("paper-inside");
   const paperFront = document.getElementById("paper-front-stack");
-  const eventInstruction = document.querySelector(".paper-instruction");
-  const paperFrontVisual = document.querySelector(".paper-front-visual");
   const hint = document.getElementById("hint");
   const eventHotspots = document.getElementById("event-hotspots");
   const invitationOverlay = document.getElementById("invitation-overlay");
@@ -76,55 +74,8 @@
 
   let currentOverlayEvent = null;
 
-  const mobileLayoutQuery = window.matchMedia("(max-width: 700px)");
-  const EVENT_INSTRUCTION_GAP = 56;
-
   /** Set false to verify static envelope layers without GSAP. */
   const ANIMATION_ENABLED = true;
-
-  function isMobileLayout() {
-    return mobileLayoutQuery.matches;
-  }
-
-  function positionEventInstruction() {
-    if (!eventInstruction || !paperFront || !isMobileLayout() || !isOpen) return;
-
-    requestAnimationFrame(() => {
-      const rect = paperFront.getBoundingClientRect();
-
-      if (eventInstruction.parentElement !== document.body) {
-        document.body.appendChild(eventInstruction);
-      }
-
-      eventInstruction.style.position = "fixed";
-      eventInstruction.style.left = `${rect.left + rect.width / 2}px`;
-      eventInstruction.style.top = `${rect.bottom + EVENT_INSTRUCTION_GAP}px`;
-      eventInstruction.style.transform = "translateX(-50%)";
-      eventInstruction.style.visibility = "visible";
-    });
-  }
-
-  function resetEventInstruction() {
-    if (!eventInstruction || !paperFrontVisual) return;
-
-    eventInstruction.style.position = "";
-    eventInstruction.style.left = "";
-    eventInstruction.style.top = "";
-    eventInstruction.style.transform = "";
-    eventInstruction.style.visibility = "";
-
-    if (eventInstruction.parentElement !== paperFrontVisual) {
-      paperFrontVisual.appendChild(eventInstruction);
-    }
-  }
-
-  function syncEventInstruction() {
-    if (isMobileLayout() && isOpen) {
-      positionEventInstruction();
-    } else {
-      resetEventInstruction();
-    }
-  }
 
   function ensureClosedBaseline() {
     if (closeflap) closeflap.style.opacity = "1";
@@ -232,7 +183,6 @@
       "aria-label",
       "Open the envelope to reveal the save the date"
     );
-    resetEventInstruction();
     showHint();
     setHotspotsAvailable(false);
     closeInvitationOverlay();
@@ -273,7 +223,6 @@
         transformOrigin: PAPER_ORIGIN,
       });
       setOpenUi();
-      syncEventInstruction();
     } else {
       gsap.set(closeflap, { opacity: 1 });
       gsap.set(openflap, {
@@ -342,7 +291,6 @@
           isAnimating = false;
           isOpen = true;
           setOpenUi();
-          syncEventInstruction();
         },
         onReverseComplete() {
           isAnimating = false;
@@ -650,13 +598,8 @@
         timeline.progress(stayOpen ? 1 : 0).pause();
       }
       applyInstantState(stayOpen);
-      syncEventInstruction();
       isAnimating = false;
     }, 150);
-  }
-
-  function onOrientationChange() {
-    syncEventInstruction();
   }
 
   if (ANIMATION_ENABLED) {
@@ -668,7 +611,6 @@
   envelope.addEventListener("pointerup", onPointerUp);
   envelope.addEventListener("keydown", onKeyDown);
   window.addEventListener("resize", onResize, { passive: true });
-  window.addEventListener("orientationchange", onOrientationChange);
 
   const shendiHotspot = document.getElementById("hotspot-shendi");
   const walimaHotspot = document.getElementById("hotspot-walima");
