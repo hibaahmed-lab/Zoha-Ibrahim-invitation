@@ -253,6 +253,17 @@ body {
   transform-origin: 50% 50%;
 }
 
+.paper-front-visual {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  aspect-ratio: 1500 / 2100;
+  max-height: 100%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .paper-front-stack .paper-front-img {
   position: absolute;
   inset: 0;
@@ -282,8 +293,8 @@ body {
 .paper-instruction {
   position: absolute;
   left: 50%;
-  top: auto;
-  bottom: calc(7% + 30px);
+  top: calc(100% + 14px);
+  bottom: auto;
   transform: translateX(-50%);
   width: 80%;
   text-align: center;
@@ -590,9 +601,6 @@ body.has-overlay {
     text-transform: uppercase;
   }
 
-  .paper-instruction {
-    bottom: calc(7% - 16px);
-  }
 }
 
 /* ---- Short viewports — keep opened card + hint on screen --------------- */
