@@ -589,6 +589,10 @@ body.has-overlay {
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
+
+  .paper-instruction {
+    bottom: calc(7% + 2px);
+  }
 }
 
 /* ---- Short viewports — keep opened card + hint on screen --------------- */
