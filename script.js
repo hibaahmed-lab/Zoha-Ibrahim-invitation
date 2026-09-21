@@ -620,7 +620,7 @@
     shendiHotspot.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openEventInvite("images/Zoha&Ibrahim-Shendi.png");
+      openEventInvite("images/Zoha&Ibrahim-Sangeet.png");
     });
   }
 
@@ -628,7 +628,7 @@
     walimaHotspot.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openEventInvite("images/Zoha&Ibrahim-Walima.png");
+      openEventInvite("images/Zoha&Ibrahim-Shendi.png");
     });
   }
 
@@ -636,7 +636,7 @@
     sangeetHotspot.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openEventInvite("images/Zoha&Ibrahim-Sangeet.png");
+      openEventInvite("images/Zoha&Ibrahim-Walima.png");
     });
   }
 
