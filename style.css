@@ -602,7 +602,7 @@ body.has-overlay {
   }
 
   .paper-instruction {
-    top: calc(100% + 32px);
+    top: calc(100% + 48px);
   }
 }
 
