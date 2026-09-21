@@ -47,6 +47,33 @@
 
   if (!envelope || !scene) return;
 
+  const SANGEET_MAP_URL =
+    "https://maps.app.goo.gl/sRpFYudfQMoq8FEL6?g_st=ic";
+  const SANGEET_MAP_REGION = {
+    left: 8.5,
+    right: 91,
+    top: 31.8,
+    bottom: 35,
+  };
+  const SHENDI_MAP_URL =
+    "https://maps.app.goo.gl/xQMSEyRko4dZSSLc8?g_st=ic";
+  const SHENDI_MAP_REGION = {
+    left: 28.5,
+    right: 71.5,
+    top: 33.8,
+    bottom: 52.2,
+  };
+  const WALIMA_MAP_URL =
+    "https://maps.app.goo.gl/BmcBxihc9sGF7icr7?g_st=ic";
+  const WALIMA_MAP_REGION = {
+    left: 24,
+    right: 76,
+    top: 63,
+    bottom: 69,
+  };
+
+  let currentOverlayEvent = null;
+
   /** Set false to verify static envelope layers without GSAP. */
   const ANIMATION_ENABLED = true;
 
@@ -123,13 +150,40 @@
     eventHotspots.setAttribute("aria-hidden", available ? "false" : "true");
   }
 
+  function hideHint(instant = false) {
+    if (!hint) return;
+    if (typeof gsap !== "undefined") {
+      gsap.killTweensOf(hint);
+      if (instant) {
+        gsap.set(hint, { autoAlpha: 0 });
+      } else {
+        gsap.to(hint, {
+          autoAlpha: 0,
+          duration: 0.2,
+          ease: "power1.out",
+        });
+      }
+    } else {
+      hint.classList.add("is-hidden");
+    }
+  }
+
+  function showHint() {
+    if (!hint) return;
+    if (typeof gsap !== "undefined") {
+      gsap.killTweensOf(hint);
+      gsap.set(hint, { autoAlpha: 1 });
+    }
+    hint.classList.remove("is-hidden");
+  }
+
   function setClosedUi() {
     envelope.classList.remove("is-open");
     envelope.setAttribute(
       "aria-label",
       "Open the envelope to reveal the save the date"
     );
-    hint.classList.remove("is-hidden");
+    showHint();
     setHotspotsAvailable(false);
     closeInvitationOverlay();
   }
@@ -140,7 +194,6 @@
       "aria-label",
       "Save the date revealed — tap to close"
     );
-    hint.classList.add("is-hidden");
     if (!isOverlayOpen()) {
       setHotspotsAvailable(true);
     }
@@ -148,6 +201,7 @@
 
   function applyInstantState(open) {
     if (open) {
+      hideHint(true);
       gsap.set(closeflap, { opacity: 0 });
       gsap.set(openflap, {
         opacity: 1,
@@ -196,6 +250,10 @@
 
     ctx = gsap.context(() => {
       // ---- Explicit initial state (closed) ------------------------------
+      if (hint) {
+        gsap.set(hint, { autoAlpha: 1 });
+      }
+
       gsap.set(closeflap, { opacity: 1 });
 
       gsap.set(openflap, {
@@ -371,6 +429,60 @@
     );
   }
 
+  function getOverlayEventFromPath(imagePath) {
+    if (/Shendi\.png/i.test(imagePath)) return "shendi";
+    if (/Walima\.png/i.test(imagePath)) return "walima";
+    if (/Sangeet\.png/i.test(imagePath)) return "sangeet";
+    return null;
+  }
+
+  function getImageClickPercent(event) {
+    const rect = invitationOverlayImage.getBoundingClientRect();
+    return {
+      xPercent: ((event.clientX - rect.left) / rect.width) * 100,
+      yPercent: ((event.clientY - rect.top) / rect.height) * 100,
+    };
+  }
+
+  function isInSangeetMapRegion(xPercent, yPercent) {
+    return (
+      xPercent >= SANGEET_MAP_REGION.left &&
+      xPercent <= SANGEET_MAP_REGION.right &&
+      yPercent >= SANGEET_MAP_REGION.top &&
+      yPercent <= SANGEET_MAP_REGION.bottom
+    );
+  }
+
+  function isInShendiMapRegion(xPercent, yPercent) {
+    return (
+      xPercent >= SHENDI_MAP_REGION.left &&
+      xPercent <= SHENDI_MAP_REGION.right &&
+      yPercent >= SHENDI_MAP_REGION.top &&
+      yPercent <= SHENDI_MAP_REGION.bottom
+    );
+  }
+
+  function isInWalimaMapRegion(xPercent, yPercent) {
+    return (
+      xPercent >= WALIMA_MAP_REGION.left &&
+      xPercent <= WALIMA_MAP_REGION.right &&
+      yPercent >= WALIMA_MAP_REGION.top &&
+      yPercent <= WALIMA_MAP_REGION.bottom
+    );
+  }
+
+  function openSangeetMap() {
+    window.open(SANGEET_MAP_URL, "_blank", "noopener,noreferrer");
+  }
+
+  function openShendiMap() {
+    window.open(SHENDI_MAP_URL, "_blank", "noopener,noreferrer");
+  }
+
+  function openWalimaMap() {
+    window.open(WALIMA_MAP_URL, "_blank", "noopener,noreferrer");
+  }
+
   function openEventInvite(imagePath) {
     if (!invitationOverlay || !invitationOverlayImage || !imagePath) return;
     if (!isOpen || isAnimating || isOverlayOpen()) return;
@@ -384,6 +496,8 @@
     if (eventHotspots) {
       eventHotspots.setAttribute("aria-hidden", "true");
     }
+
+    currentOverlayEvent = getOverlayEventFromPath(imagePath);
   }
 
   function closeInvitationOverlay() {
@@ -401,6 +515,11 @@
     if (eventHotspots && isOpen) {
       eventHotspots.setAttribute("aria-hidden", "false");
     }
+
+    currentOverlayEvent = null;
+    if (invitationOverlayImage) {
+      invitationOverlayImage.style.cursor = "";
+    }
   }
 
   function toggleEnvelope() {
@@ -409,6 +528,9 @@
 
     if (prefersReducedMotion) {
       isOpen = !isOpen;
+      if (isOpen) {
+        hideHint(true);
+      }
       applyInstantState(isOpen);
       timeline.progress(isOpen ? 1 : 0).pause();
       return;
@@ -426,10 +548,12 @@
     } else {
       if (timeline.progress() === 1) {
         isOpen = true;
+        hideHint(true);
         applyInstantState(true);
         return;
       }
       isAnimating = true;
+      hideHint();
       timeline.play();
     }
   }
@@ -532,6 +656,58 @@
     invitationOverlayBackdrop.addEventListener("pointerup", (event) => {
       event.preventDefault();
       closeInvitationOverlay();
+    });
+  }
+
+  if (invitationOverlayImage) {
+    invitationOverlayImage.addEventListener("click", (event) => {
+      const { xPercent, yPercent } = getImageClickPercent(event);
+
+      if (
+        currentOverlayEvent === "sangeet" &&
+        isInSangeetMapRegion(xPercent, yPercent)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        openSangeetMap();
+        return;
+      }
+
+      if (
+        currentOverlayEvent === "shendi" &&
+        isInShendiMapRegion(xPercent, yPercent)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        openShendiMap();
+        return;
+      }
+
+      if (
+        currentOverlayEvent === "walima" &&
+        isInWalimaMapRegion(xPercent, yPercent)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        openWalimaMap();
+      }
+    });
+
+    invitationOverlayImage.addEventListener("mousemove", (event) => {
+      const { xPercent, yPercent } = getImageClickPercent(event);
+      const inMapRegion =
+        (currentOverlayEvent === "sangeet" &&
+          isInSangeetMapRegion(xPercent, yPercent)) ||
+        (currentOverlayEvent === "shendi" &&
+          isInShendiMapRegion(xPercent, yPercent)) ||
+        (currentOverlayEvent === "walima" &&
+          isInWalimaMapRegion(xPercent, yPercent));
+
+      invitationOverlayImage.style.cursor = inMapRegion ? "pointer" : "";
+    });
+
+    invitationOverlayImage.addEventListener("mouseleave", () => {
+      invitationOverlayImage.style.cursor = "";
     });
   }
 })();

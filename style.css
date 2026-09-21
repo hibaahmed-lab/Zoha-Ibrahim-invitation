@@ -277,6 +277,25 @@ body {
   opacity: 1;
 }
 
+/* ---- Opened card instruction ------------------------------------------- */
+
+.paper-instruction {
+  position: absolute;
+  left: 50%;
+  top: auto;
+  bottom: calc(7% + 30px);
+  transform: translateX(-50%);
+  width: 80%;
+  text-align: center;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #6b4a37;
+  z-index: 50;
+  pointer-events: none;
+}
+
 /* ---- Event hotspots (menu card) ---------------------------------------- */
 
 .event-hotspots {
@@ -415,17 +434,22 @@ body.has-overlay {
   outline-offset: 2px;
 }
 
+.invitation-overlay__figure {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
 .invitation-overlay__image {
   display: block;
   width: 100%;
-  max-width: 500px;
   height: auto;
-  margin: 0 auto;
   object-fit: contain;
 }
 
 @media (min-width: 701px) {
-  .invitation-overlay__image {
+  .invitation-overlay__figure {
     width: min(44vw, 560px);
     max-width: 560px;
   }
